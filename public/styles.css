@@ -1,0 +1,921 @@
+/* WHAT IS THIS FILE? */
+/* CSS (Cascading Style Sheets) decides how the HTML looks: colours, fonts, spacing, layout. */
+/* Each "rule" is a selector (WHICH elements) plus { property: value; } pairs (HOW they look). */
+/* HOW IT IS ORGANISED */
+/* 1. :root and [data-theme] blocks at the top hold the theme variables. */
+/* 2. Global basics (body grid, film grain, the sky drawing, links, text selection). */
+/* 3. Small reusable helpers (labels, buttons, inputs, chips), then one section per page: */
+/*    sidebar, layout, dashboard, calendar, import, chat, notes, focus, spotify, modal, mobile, ... */
+/* CSS CUSTOM PROPERTIES (VARIABLES) */
+/* Names starting with -- (like --paper, --ink, --accent) are variables. They are read with var(--ink). */
+/* Every colour in the app uses these variables, so swapping the variables re-colours everything at once. */
+/* THEMES AND FOCUS PHASES */
+/* js/app.js sets data-theme="light"/"dark" on the <html> tag and data-focus="warmup" etc. on the <body> tag. */
+/* Rules like [data-theme='dark'] { --paper: ... } re-define the variables only when that attribute is present. */
+/* DECORATIONS */
+/* "Film grain" is a tiny noise image laid over the whole page (body::after) to look like printed paper. */
+/* The "sky" is the SVG of orbit rings and stars in index.html, pinned behind everything (.sky). */
+/* ==========================================================
+   ORBIT: editorial / scrapbook / celestial
+   paper + espresso ink + cherry, serif headlines, mono labels
+   ========================================================== */
+/* :root means the <html> element. Variables declared here are available everywhere on the page. */
+:root {
+  /* Font stacks: the browser uses the first font it has; later names are fallbacks. */
+  --serif: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  --sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --hand: 'Caveat', 'Segoe Print', cursive;
+  /* --r is the standard corner radius; --ease is a reusable animation speed curve (starts fast, ends slow). */
+  --r: 6px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+
+  /* paper (default) */
+  /* Colour palette. paper = page background, card = boxes, ink = main text, muted/faint = lighter text, */
+  /* line = thin borders, accent = the cherry-red highlight colour, butter/tape = yellow paper-tape colour. */
+  --paper: #f3ece0;
+  --paper-2: #ebe2d2;
+  --card: #faf6ee;
+  --card-2: #f1e9dc;
+  --polaroid: #fffdf8;
+  --ink: #2b2118;
+  --muted: #7b6b5b;
+  --faint: #b0a290;
+  --line: rgba(43, 33, 24, .13);
+  --line-strong: rgba(43, 33, 24, .32);
+  --accent: #b3261e;
+  --butter: #f1d88c;
+  --tape: rgba(241, 216, 140, .72);
+  /* --sky is the colour of the background SVG lines; --grain is how visible the film grain is (0 to 1). */
+  --sky: rgba(43, 33, 24, .16);
+  --grain: .1;
+  /* A reusable box-shadow: two shadows separated by a comma (a thin edge line + a soft drop shadow). */
+  --shadow: 0 1px 0 rgba(43, 33, 24, .06), 0 14px 30px -22px rgba(43, 33, 24, .45);
+}
+/* NIGHT THEME: when <html data-theme="dark"> (or the "lockin" focus phase) is set, */
+/* the same variable names get dark values, so every rule using var(--paper) etc. turns dark automatically. */
+[data-theme='dark'], [data-focus='lockin'] {
+  --paper: #15110d;
+  --paper-2: #1c1712;
+  --card: #1f1a14;
+  --card-2: #28211a;
+  --polaroid: #2a231b;
+  --ink: #efe5d4;
+  --muted: #a99a89;
+  --faint: #6f6254;
+  --line: rgba(239, 229, 212, .12);
+  --line-strong: rgba(239, 229, 212, .3);
+  --accent: #e0685c;
+  --butter: #d8bb68;
+  --tape: rgba(216, 187, 104, .38);
+  --sky: rgba(239, 229, 212, .22);
+  --grain: .06;
+  --shadow: 0 16px 34px -24px rgba(0, 0, 0, .8);
+}
+/* focus modes tint the accent (eclipse = lockin also goes dark above) */
+/* Each focus phase only changes the accent colour (orange, gold, green). */
+[data-focus='warmup'] { --accent: #c26a2b; }
+[data-focus='rampup'] { --accent: #9b7a16; }
+[data-focus='examday'] { --accent: #5d7b53; }
+/* Two attribute selectors stuck together = BOTH must be true: dark theme AND that focus phase. */
+/* These are brighter accents that read better on a dark background. */
+[data-theme='dark'][data-focus='warmup'] { --accent: #e08a4c; }
+[data-theme='dark'][data-focus='rampup'] { --accent: #d4ad3c; }
+[data-theme='dark'][data-focus='examday'] { --accent: #8fb083; }
+
+/* * selects every element. border-box means width/height include padding and border (much easier maths). */
+* { box-sizing: border-box; }
+/* Remove the default 8px browser margin and let html/body fill the full window height. */
+html, body { margin: 0; height: 100%; }
+/* The page body is a CSS GRID with two columns: a 232px sidebar and 1fr (all remaining space) for the main view. */
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  font-size: 14.5px;
+  line-height: 1.55;
+  /* Makes text look thinner/smoother on Mac; the transition fades colours when the theme changes. */
+  -webkit-font-smoothing: antialiased;
+  transition: background .5s var(--ease), color .5s var(--ease);
+}
+/* film grain */
+body::after {
+  /* ::after creates an invisible extra element at the end of body. content: '' is required for it to exist. */
+  /* position: fixed + inset: 0 stretches it over the whole window and keeps it there while scrolling. */
+  /* pointer-events: none lets clicks pass through it; z-index: 90 puts it on top of almost everything. */
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 90; opacity: var(--grain);
+  /* The background is a tiny SVG noise image written inline (a "data URL"), repeated across the screen. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.13 0 0 0 0 0.09 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* multiply blends the grain into the colours beneath, so it only darkens slightly like real paper texture. */
+  mix-blend-mode: multiply;
+}
+/* On dark backgrounds multiply would be invisible, so "screen" (which lightens) is used instead. */
+[data-theme='dark'] body::after, [data-focus='lockin'] body::after { mix-blend-mode: screen; }
+/* Zen mode (class added by JavaScript): sidebar column shrinks to 0 and the sidebar slides off to the left. */
+/* translateX(-100%) moves an element left by its own full width. */
+body.zen { grid-template-columns: 0 1fr; }
+body.zen .sidebar { transform: translateX(-100%); opacity: 0; }
+/* Links use the same colour as the text around them instead of default blue. */
+a { color: inherit; }
+/* ::selection styles text you highlight with the mouse. */
+::selection { background: var(--butter); color: #2b2118; }
+
+/* The decorative SVG sky from index.html: fixed to the window, full size, z-index: -1 puts it BEHIND the page. */
+/* Its colour comes from var(--sky); the SVG uses "currentColor" so it follows this colour. */
+.sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; color: var(--sky); pointer-events: none; }
+/* Each sparkle shape runs the "twinkle" animation forever. transform-box: fill-box + transform-origin: center */
+/* makes it scale/rotate around its own centre instead of the SVG corner. */
+.sky .sparkles path { animation: twinkle 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+/* :nth-child(n) picks the 2nd / 3rd sparkle. Negative delays start them part-way through so they don't twinkle together. */
+.sky .sparkles path:nth-child(2) { animation-delay: -1.3s; }
+.sky .sparkles path:nth-child(3) { animation-delay: -2.6s; }
+/* @keyframes defines an animation. At 50% (halfway) the sparkle is faded, smaller and rotated; it returns to normal at the end. */
+@keyframes twinkle { 50% { opacity: .25; transform: scale(.7) rotate(20deg); } }
+
+/* ============ type helpers ============ */
+/* A shared "label" look for many small headings: monospace font, ALL CAPS, wide letter spacing (.12em). */
+.label, .card h2, .card h3, .day-label, .cal-dow, .mode-opt small, .chip, .tag {
+  font-family: var(--mono); font-weight: 400; text-transform: uppercase; letter-spacing: .12em;
+}
+/* Handwritten-style text (Caveat font) in the accent colour. */
+.hand { font-family: var(--hand); font-size: 22px; color: var(--accent); line-height: 1; }
+/* Tiny utility classes that you can add to any element to change colour or size. */
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: 12.5px; }
+/* <em> (emphasis) is shown in italics. */
+em { font-style: italic; }
+
+/* ============ sidebar ============ */
+/* The left sidebar. position: sticky + top: 0 + height: 100vh keeps it stuck to the screen while the page scrolls */
+/* (100vh = 100% of the viewport/window height). It is a flex column so its children stack top-to-bottom with 26px gaps. */
+.sidebar {
+  position: sticky; top: 0; height: 100vh; padding: 26px 16px 18px;
+  display: flex; flex-direction: column; gap: 26px;
+  border-right: 1px solid var(--line);
+  /* color-mix blends two colours: 88% paper + 12% transparent = slightly see-through paper. */
+  /* The transition animates the slide/fade used by zen mode; overflow: hidden hides anything that sticks out. */
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  transition: transform .4s var(--ease), opacity .4s; overflow: hidden;
+}
+/* The logo + "orbit" name at the top: flex lines them up side by side, vertically centred. */
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; padding: 0 6px; }
+/* The logo SVG: fixed 38px size; flex: none stops it shrinking. The planet circle is filled with the accent colour. */
+.logo { width: 38px; height: 38px; color: var(--ink); flex: none; }
+.logo .planet { fill: var(--accent); transition: fill .5s; }
+/* An extra arc in the logo that is hidden by default (display: none removes it from the page). */
+.logo .planet-cover { display: none; }
+/* The "orbit" word: big italic serif. */
+.brand-name { font-family: var(--serif); font-size: 32px; line-height: 1; letter-spacing: -.5px; font-style: italic; }
+/* The navigation links stacked vertically (flex column). */
+.nav { display: flex; flex-direction: column; }
+/* Each nav link: flex row (number + word). align-items: baseline lines up the text bottoms. */
+/* The transition makes colour and padding changes animate smoothly. */
+.nav a {
+  display: flex; align-items: baseline; gap: 14px; padding: 8px 8px; text-decoration: none;
+  color: var(--muted); font-size: 15px; border-bottom: 1px solid transparent; transition: color .2s, padding .25s var(--ease);
+}
+/* :hover = while the mouse is over the link: darker text and it nudges right (more left padding). */
+.nav a:hover { color: var(--ink); padding-left: 12px; }
+/* .active is added by js/app.js to the link of the page you are on. */
+.nav a.active { color: var(--ink); }
+/* ::after adds a small accent-coloured dot. margin-left: auto pushes it to the far right of the flex row. */
+.nav a.active::after { content: ''; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); align-self: center; }
+/* The little "01", "02" numbers before each link name. */
+.nav .ico { font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: .05em; }
+.nav a.active .ico { color: var(--accent); }
+/* Bottom area of the sidebar. margin-top: auto in a flex column pushes it to the bottom. */
+.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+/* The focus-phase box in the sidebar (content written by JavaScript). */
+.focus-pill {
+  display: block; text-decoration: none; padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--line-strong); background: var(--card); position: relative;
+}
+/* Inside the pill: small caps label, a big italic phase name (b), and a description. */
+.focus-pill small { display: block; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.focus-pill b { font-family: var(--serif); font-weight: 400; font-size: 22px; font-style: italic; color: var(--accent); display: block; line-height: 1.2; }
+/* "A + B" means a B that comes directly after A. So this is the <small> right after the <b>. */
+.focus-pill small + b + small { text-transform: none; letter-spacing: 0; font-family: var(--sans); font-size: 12px; }
+/* A pill-shaped mini timer (border-radius: 99px makes fully round ends) with inverted colours. */
+.mini-timer { font-family: var(--mono); text-align: center; padding: 8px; border-radius: 99px; background: var(--ink); color: var(--paper); cursor: pointer; font-size: 13px; }
+/* :empty matches an element with no children, so the music dock is hidden until something is put in it. */
+.player-dock:empty { display: none; }
+.player-dock .spotify-embed { border-radius: 10px; }
+
+/* ============ layout ============ */
+/* The main page area (#view). clamp(20px, 4vw, 60px) = 4% of window width, but never below 20px or above 60px. */
+/* min-width: 0 stops wide content from stretching the grid column. */
+.main { padding: 40px clamp(20px, 4vw, 60px) 70px; min-width: 0; max-width: 1400px; width: 100%; }
+/* The header at the top of each page: flex row, title on the left and buttons on the right, wraps on small screens. */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 30px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--line-strong); }
+/* Small caps line above the big title, the big serif page title, accent italic words, and the subtitle. */
+.page-head .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.page-head h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 5.6vw, 76px); margin: 0; line-height: .95; letter-spacing: -1.5px; }
+.page-head h1 em { color: var(--accent); }
+.page-head p { color: var(--muted); margin: 12px 0 0; max-width: 60ch; }
+/* Elements with .view-enter fade/slide in using the "rise" animation. "both" keeps the start state before it begins. */
+/* The second one is delayed by .06s for a staggered effect. */
+.view-enter { animation: rise .5s var(--ease) both; }
+.view-enter + .view-enter { animation-delay: .06s; }
+/* rise: starts invisible and 8px lower, ends at its normal position (the "to" state is the normal style). */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+/* Grid helpers. auto-fit + minmax(290px, 1fr) = as many columns as fit, each at least 290px wide. */
+/* .dash = two columns where the left is 1.35 times wider than the right. */
+.grid { display: grid; gap: 22px; }
+.grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+.grid.dash { grid-template-columns: 1.35fr 1fr; }
+/* @media = only applies when the condition is true. Here: on screens 1050px wide or less, use one column. */
+@media (max-width: 1050px) { .grid.dash { grid-template-columns: 1fr; } }
+/* Layout helpers: .stack = vertical column, .row = horizontal row that wraps, .spread = push items to both ends. */
+.stack { display: flex; flex-direction: column; gap: 22px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+
+/* The basic "card" box used everywhere. position: relative lets children use position: absolute relative to the card. */
+.card {
+  position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 22px; box-shadow: var(--shadow);
+}
+/* Card titles: small, muted, and a flex row so a link can sit at the right end. */
+.card h2, .card h3 { margin: 0 0 16px; font-size: 11px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card h2 a, .card h3 a { font-family: var(--mono); text-decoration: none; color: var(--muted); border-bottom: 1px solid var(--line-strong); }
+.card h2 a:hover { color: var(--accent); }
+/* Taped card: ::before draws a strip of "tape" on the top edge. left: 50% + translateX(-50%) centres it; */
+/* rotate tilts it; clip-path: polygon(...) cuts the rectangle into an uneven torn shape. */
+.card.taped::before {
+  content: ''; position: absolute; top: -11px; left: 50%; width: 96px; height: 24px; background: var(--tape);
+  transform: translateX(-50%) rotate(-2.5deg); box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
+}
+/* Placeholder shown when a list has nothing in it. */
+.empty { color: var(--muted); text-align: center; padding: 28px 10px; font-size: 14px; }
+.empty .big { display: block; font-family: var(--serif); font-size: 34px; font-style: italic; color: var(--ink); margin-bottom: 4px; }
+
+/* ============ controls ============ */
+/* Standard button: pill shaped, dark ink background. inline-flex lets an icon and text sit side by side. */
+/* "font: 500 13.5px var(--sans)" is shorthand for weight, size and family. transition: all animates every change. */
+.btn {
+  font: 500 13.5px var(--sans); border: 1px solid var(--ink); cursor: pointer; padding: 9px 18px; border-radius: 99px;
+  color: var(--paper); background: var(--ink); display: inline-flex; align-items: center; gap: 8px;
+  text-decoration: none; white-space: nowrap; transition: all .2s var(--ease); letter-spacing: .01em;
+}
+/* Button states: hover turns it accent red; :disabled (button can't be clicked) makes it faded with a "not allowed" cursor. */
+.btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+/* Button variants: ghost = outline only, danger = red outline, sm = smaller, spotify = Spotify green. */
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn.ghost:hover { border-color: var(--ink); background: var(--card-2); color: var(--ink); }
+.btn.danger { background: transparent; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.btn.danger:hover { background: var(--accent); color: #fff; }
+.btn.sm { padding: 6px 13px; font-size: 12.5px; }
+.btn.spotify { background: #1db954; border-color: #1db954; color: #0b2a17; }
+/* Small borderless button usually holding just an icon or symbol. */
+.icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 6px 8px; border-radius: 99px; font-family: var(--sans); }
+.icon-btn:hover { color: var(--accent); background: var(--card-2); }
+
+/* All form fields: inherit the page font, transparent background, thin border, full width. outline: none removes the default blue glow. */
+input, select, textarea {
+  font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line-strong);
+  border-radius: var(--r); padding: 10px 12px; width: 100%; outline: none; transition: border .2s, background .2s;
+}
+/* ::placeholder is the grey hint text; :focus is when the field is selected for typing. */
+input::placeholder, textarea::placeholder { color: var(--faint); }
+input:focus, select:focus, textarea:focus { border-color: var(--ink); background: var(--polaroid); }
+/* Dropdown options, and text areas that can only be resized vertically. */
+select option { background: var(--card); }
+textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+/* Custom round checkbox. appearance: none removes the browser's default checkbox so we can draw our own. */
+/* display: grid + place-items: center centres the tick inside. */
+input[type='checkbox'] {
+  appearance: none; -webkit-appearance: none; width: 17px; height: 17px; border: 1.3px solid var(--line-strong); border-radius: 50%;
+  padding: 0; cursor: pointer; display: grid; place-items: center; flex: none; background: transparent;
+}
+/* :checked = ticked. The tick is an ::after box with only right and bottom borders, rotated 45deg to look like a check mark. */
+input[type='checkbox']:checked { background: var(--accent); border-color: var(--accent); }
+input[type='checkbox']:checked::after { content: ''; width: 5px; height: 9px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: translateY(-1px) rotate(45deg); }
+/* Colour picker inputs shown as circles. */
+input[type='color'] { border-radius: 50%; overflow: hidden; }
+/* A label that wraps an input: label text on top (small caps), input below. flex: 1 shares space equally in a row. */
+label.field { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); flex: 1; min-width: 140px; }
+label.field input, label.field select, label.field textarea { font-family: var(--sans); text-transform: none; letter-spacing: 0; font-size: 14.5px; }
+/* Label containing a checkbox and text side by side. */
+label.check { display: inline-flex; gap: 10px; align-items: center; cursor: pointer; }
+/* Segmented control: a pill containing several buttons; the selected one (.on) is filled dark. */
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 99px; padding: 3px; flex-wrap: wrap; }
+.seg button { font: 500 12.5px var(--sans); border: none; background: none; color: var(--muted); padding: 6px 13px; border-radius: 99px; cursor: pointer; }
+.seg button.on { background: var(--ink); color: var(--paper); }
+
+/* Chips and tags: small rounded labels. --c is a per-item colour set from JavaScript; var(--c, var(--accent)) means */
+/* "use --c, or the accent if --c is not set". .dot-c is a small coloured circle. */
+.chip { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line-strong); white-space: nowrap; }
+.dot-c { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.tag { font-size: 10px; padding: 3px 9px; border-radius: 99px; border: 1px solid color-mix(in srgb, var(--c, var(--accent)) 60%, transparent); color: var(--c, var(--accent)); }
+
+/* ============ event rows ============ */
+/* EVENT ROWS (lists of deadlines/exams). Each .ev is a 4-column grid: time | colour dot | title | extra. */
+/* "auto" columns size to their content, 1fr takes the rest. */
+.ev-list { display: flex; flex-direction: column; }
+.ev {
+  display: grid; grid-template-columns: auto 8px 1fr auto; gap: 12px; align-items: center;
+  padding: 11px 4px; cursor: pointer; border-bottom: 1px dashed var(--line); transition: background .15s, padding .2s var(--ease);
+}
+/* No dashed line under the last row; rows slide right on hover. */
+.ev:last-child { border-bottom: none; }
+.ev:hover { padding-left: 10px; }
+/* Parts of a row: coloured dot, title (t), subtitle (s), done = struck-through, when = date, kind = type label. */
+.ev .bar { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.ev .t { font-size: 15px; }
+.ev .s { color: var(--muted); font-size: 12.5px; }
+.ev.done .t { text-decoration: line-through; text-decoration-color: var(--accent); color: var(--faint); }
+.ev .when { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.ev .kind { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--c); margin-left: 6px; vertical-align: 2px; }
+/* Heading between days in a list. ::after with flex: 1 draws a line that fills the rest of the row. */
+.day-label { font-size: 10.5px; color: var(--muted); margin: 16px 4px 2px; display: flex; gap: 10px; align-items: center; }
+.day-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.day-label:first-child { margin-top: 0; }
+
+/* ============ dashboard ============ */
+/* DASHBOARD: the big top "cover" card. Grid of text on the left and the orbit map on the right (between 300px and 440px). */
+.cover { display: grid; grid-template-columns: 1fr minmax(300px, 440px); gap: 10px; align-items: center; padding: 28px 30px; overflow: hidden; }
+/* On narrower screens the cover becomes one column. */
+@media (max-width: 1050px) { .cover { grid-template-columns: 1fr; } }
+/* Big headline showing the current mode, plus its paragraph. */
+.cover .mode { font-family: var(--serif); font-size: clamp(36px, 4vw, 54px); line-height: 1; letter-spacing: -1px; margin: 8px 0 12px; }
+.cover .mode em { color: var(--accent); }
+.cover p { margin: 0 0 18px; color: var(--muted); max-width: 46ch; }
+/* The orbit-map SVG: rings, labels, the "sun" and the planets (one per upcoming exam). SVG uses fill/stroke instead of color/border. */
+/* overflow: visible lets planets drawn near the edge show fully. */
+.orbit-map { width: 100%; height: auto; overflow: visible; }
+.orbit-map .ring { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+.orbit-map .ring.dash { stroke-dasharray: 2 5; }
+.orbit-map .rlabel { font: 9px var(--mono); fill: var(--faint); letter-spacing: .1em; }
+.orbit-map .plabel { font: 10px var(--mono); fill: var(--ink); letter-spacing: .04em; }
+.orbit-map .pdays { font: italic 13px var(--serif); fill: var(--muted); }
+.orbit-map .sun { fill: var(--accent); }
+.orbit-map .sunlabel { font: italic 13px var(--serif); fill: var(--paper); }
+/* Planets grow (radius r: 12) on hover. transition: r animates the size change. */
+.orbit-map .planet { cursor: pointer; transition: r .2s; }
+.orbit-map .planet:hover { r: 12; }
+/* The .spin group rotates forever (90 seconds per turn) around the point --cx/--cy set from JavaScript. */
+.orbit-map .spin { animation: spin 90s linear infinite; transform-origin: var(--cx) var(--cy); }
+/* spin: rotate a full circle. Also reused by the spinning record in the Spotify section. */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Polaroid-style countdown cards. auto-fill + minmax(132px, 1fr) fits as many 132px+ cards per row as possible. */
+.countdowns { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 16px; padding: 4px 2px 6px; }
+/* Each countdown card is slightly tilted using the --tilt variable (default -1.5deg). */
+.countdown {
+  background: var(--polaroid); padding: 9px 9px 12px; cursor: pointer; border: 1px solid var(--line);
+  box-shadow: 0 10px 20px -14px rgba(43, 33, 24, .55); transform: rotate(var(--tilt, -1.5deg)); transition: transform .25s var(--ease);
+}
+/* Every 2nd and 3rd card gets a different tilt so they look randomly placed. Hover straightens and lifts the card. */
+.countdown:nth-child(2n) { --tilt: 1.8deg; }
+.countdown:nth-child(3n) { --tilt: -.6deg; }
+.countdown:hover { transform: rotate(0) translateY(-3px); }
+/* The coloured "photo" square. aspect-ratio keeps its shape; grid + place-items centres the big number. */
+.countdown .pic {
+  aspect-ratio: 1 / .82; background: var(--c); display: grid; place-items: center; position: relative; overflow: hidden;
+  color: #fffaf2; font-family: var(--serif); font-size: 50px; line-height: 1;
+}
+/* A thin oval ring drawn across the photo (like a planet ring) using ::before. */
+.countdown .pic::before { content: ''; position: absolute; width: 140%; height: 38%; border: 1px solid rgba(255,250,242,.55); border-radius: 50%; transform: rotate(-16deg); }
+/* Small label pinned to the bottom-right corner of the photo with position: absolute. */
+.countdown .pic small { position: absolute; bottom: 6px; right: 8px; font: 9.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; opacity: .9; }
+/* Handwritten caption. ellipsis + nowrap + overflow hidden = cut long text with "..." on one line. */
+.countdown .l { font-family: var(--hand); font-size: 20px; margin-top: 8px; line-height: 1.05; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.countdown .sub { font: 10px var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+/* Quick-add text box with a button next to it. */
+.quick-add { display: flex; gap: 8px; }
+.quick-add input { flex: 1; border-radius: 99px; padding-left: 16px; }
+/* Call-to-action card (shown when there is nothing to show yet). */
+.cta { text-align: center; padding: 30px 16px; }
+.cta .big { font-family: var(--serif); font-size: 44px; font-style: italic; color: var(--accent); line-height: 1; }
+.cta h3 { font-family: var(--serif); font-size: 30px; letter-spacing: -.3px; text-transform: none; color: var(--ink); justify-content: center; margin: 8px 0 4px; font-weight: 400; }
+/* Yellow sticky-note scrap pinned to the top-right corner of a card and rotated 4deg. */
+.note-scrap { position: absolute; right: 18px; top: -16px; transform: rotate(4deg); background: var(--butter); color: #2b2118; padding: 6px 14px 8px; font-family: var(--hand); font-size: 20px; box-shadow: 0 6px 14px -10px rgba(0,0,0,.5); }
+
+/* ============ calendar ============ */
+/* CALENDAR: two columns (calendar + 330px side panel). align-items: start stops the panel stretching to full height. */
+.cal-layout { display: grid; grid-template-columns: 1fr 330px; gap: 22px; align-items: start; }
+/* Below 1100px the side panel moves under the calendar. */
+@media (max-width: 1100px) { .cal-layout { grid-template-columns: 1fr; } }
+/* The month title and the previous/next buttons above the grid. */
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+.cal-head .title { font-family: var(--serif); font-size: 38px; letter-spacing: -.8px; line-height: 1; }
+.cal-head .title .faint { font-style: italic; }
+/* The month grid: repeat(7, 1fr) = 7 equal columns, one per weekday. Cells draw right/bottom borders to form lines. */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--line-strong); border-left: 1px solid var(--line); }
+/* Weekday names row (Mon, Tue, ...). */
+.cal-dow { font-size: 10px; color: var(--muted); padding: 8px 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line-strong); }
+/* One day square: a flex column of the day number and event chips. */
+.cal-cell {
+  min-height: 112px; padding: 6px; cursor: pointer; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 3px; min-width: 0; transition: background .15s;
+}
+.cal-cell:hover { background: var(--card-2); }
+/* Days from the previous/next month: diagonal stripes made with repeating-linear-gradient, and faded content. */
+.cal-cell.other { background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--line) 6px 7px); }
+.cal-cell.other .num, .cal-cell.other .cal-chip { opacity: .45; }
+/* The selected day is tinted yellow (32% butter mixed with transparent). */
+.cal-cell.sel { background: color-mix(in srgb, var(--butter) 32%, transparent); }
+/* Day number; today's number gets an accent-coloured circle (outline + border-radius 50%). */
+.cal-cell .num { font-family: var(--serif); font-size: 19px; line-height: 1; padding: 3px 5px 5px; align-self: flex-start; }
+.cal-cell.today .num { color: var(--accent); outline: 1.4px solid var(--accent); border-radius: 50%; min-width: 28px; text-align: center; outline-offset: 1px; font-style: italic; }
+/* An event inside a day cell, with a coloured left border. Variants: exam = filled, study = dotted, done = struck through. */
+.cal-chip { font-size: 11.5px; padding: 1px 4px 1px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 2px solid var(--c); line-height: 1.45; }
+.cal-chip:hover { background: color-mix(in srgb, var(--c) 14%, transparent); }
+.cal-chip.exam { background: var(--c); color: #fffaf2; border-left-color: transparent; border-radius: 3px; }
+.cal-chip.study { border-left-style: dotted; color: var(--muted); }
+.cal-chip.done { text-decoration: line-through; opacity: .5; }
+/* "+2 more" text and the course filter chips (faded unless switched on). */
+.cal-more { font: 10px var(--mono); color: var(--muted); padding-left: 6px; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filters .chip { cursor: pointer; opacity: .45; transition: opacity .2s; }
+.filters .chip.on { opacity: 1; border-color: var(--ink); }
+
+/* ============ import ============ */
+/* SYLLABUS IMPORT: the dashed drag-and-drop zone. The repeating gradient draws faint ruled lines like notebook paper. */
+.drop {
+  display: block; border: 1.4px dashed var(--line-strong); border-radius: var(--r); padding: 38px 20px; text-align: center; cursor: pointer;
+  transition: all .2s; background: repeating-linear-gradient(0deg, transparent 0 27px, var(--line) 27px 28px);
+}
+/* .over is added by JavaScript while a file is dragged over the zone. */
+.drop:hover, .drop.over { border-color: var(--accent); background-color: color-mix(in srgb, var(--butter) 18%, transparent); }
+/* Text inside the drop zone, and each extracted result row (text + button). */
+.drop .big { font-family: var(--serif); font-size: 40px; line-height: 1; font-style: italic; color: var(--accent); }
+.drop b { display: block; margin: 10px 0 4px; font-family: var(--serif); font-weight: 400; font-size: 24px; }
+.result-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+
+/* ============ chat ============ */
+/* CHAT: a flex column whose height is the window minus 230px (calc does maths with mixed units). */
+.chat { display: flex; flex-direction: column; height: calc(100vh - 230px); min-height: 460px; padding: 0; overflow: hidden; }
+/* The message list fills the free space (flex: 1) and scrolls on its own (overflow-y: auto). */
+.chat-log { flex: 1; overflow-y: auto; padding: 26px; display: flex; flex-direction: column; gap: 14px; }
+/* A chat bubble, max 76% of the width. User bubbles go right (align-self: flex-end) and are dark; */
+/* assistant bubbles go left. Four border-radius values = top-left, top-right, bottom-right, bottom-left. */
+.msg { max-width: 76%; padding: 12px 16px; line-height: 1.6; animation: rise .3s var(--ease); font-size: 14.5px; }
+.msg.user { align-self: flex-end; background: var(--ink); color: var(--paper); border-radius: 18px 18px 4px 18px; }
+.msg.assistant { align-self: flex-start; background: var(--polaroid); border: 1px solid var(--line); border-radius: 18px 18px 18px 4px; }
+/* Spacing for paragraphs, lists and bold text inside AI answers. */
+.msg p { margin: 0 0 8px; } .msg p:last-child { margin: 0; }
+.msg ul, .msg ol { margin: 4px 0 8px; padding-left: 20px; }
+.msg strong { font-weight: 600; }
+/* The typing area at the bottom with its textarea and send button. */
+.chat-input { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--line); align-items: flex-end; }
+.chat-input textarea { min-height: 46px; max-height: 160px; resize: none; border-radius: 22px; padding: 12px 18px; }
+/* Suggested question buttons shown when the chat is empty. */
+.suggestions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+.suggestions button { font: 13px var(--sans); padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); cursor: pointer; }
+.suggestions button:hover { background: var(--ink); color: var(--paper); }
+/* "Thinking" indicator: three dots that bob up and down one after another (different animation-delay each). */
+.thinking { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); font-family: var(--hand); font-size: 19px; }
+.thinking .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: bob 1s infinite; }
+.thinking .dot:nth-child(2) { animation-delay: .15s; } .thinking .dot:nth-child(3) { animation-delay: .3s; margin-right: 6px; }
+/* bob: halfway through, the dot is 4px higher and faded. */
+@keyframes bob { 50% { transform: translateY(-4px); opacity: .4; } }
+
+/* ============ notes ============ */
+/* NOTES: a 290px note list on the left and the editor on the right; one column below 900px. */
+.notes-layout { display: grid; grid-template-columns: 290px 1fr; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .notes-layout { grid-template-columns: 1fr; } }
+/* Scrollable list of notes and each note item (highlighted when selected with .on). */
+.note-list { display: flex; flex-direction: column; max-height: calc(100vh - 260px); overflow-y: auto; }
+.note-item { padding: 12px 8px; cursor: pointer; border-bottom: 1px dashed var(--line); transition: padding .2s var(--ease); }
+.note-item:hover { padding-left: 14px; }
+.note-item.on { background: color-mix(in srgb, var(--butter) 30%, transparent); }
+.note-item .t { font-family: var(--serif); font-size: 18px; line-height: 1.2; }
+/* Note preview limited to 2 lines with -webkit-line-clamp (needs the -webkit-box display and orient lines). */
+.note-item .s { color: var(--muted); font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 3px; }
+/* The note page: a repeating gradient draws a ruled line every 32px, like lined paper. */
+.paper-sheet { background: var(--polaroid); background-image: repeating-linear-gradient(0deg, transparent 0 31px, var(--line) 31px 32px); background-position: 0 14px; padding: 30px 38px 40px; }
+/* The big editable note title. !important forces these values over other rules (removes input background). */
+.note-title { font-family: var(--serif); font-size: 44px; letter-spacing: -1px; background: none !important; border: none; padding: 0; margin-bottom: 6px; line-height: 1.1; }
+/* PROSE = formatted note text (from markdown). Tall line-height lines up text with the ruled paper lines. */
+.prose { line-height: 2; font-size: 15.5px; }
+.prose h2, .prose h3, .prose h4, .prose h5 { font-family: var(--serif); font-weight: 400; margin: 1.1em 0 .1em; text-transform: none; letter-spacing: -.2px; color: var(--ink); display: block; line-height: 1.3; }
+/* Heading sizes from largest (h2) to smallest (h5). */
+.prose h2 { font-size: 32px; } .prose h3 { font-size: 27px; } .prose h4 { font-size: 23px; font-style: italic; color: var(--accent); } .prose h5 { font-size: 19px; }
+/* Lists, checklists, code, quotes and horizontal rules inside notes. */
+.prose p { margin: 0; }
+.prose ul, .prose ol { padding-left: 22px; margin: 0; }
+.prose ul.checks { list-style: none; padding-left: 2px; }
+.prose ul.checks li { display: flex; gap: 10px; align-items: center; }
+.prose code { font-family: var(--mono); background: var(--card-2); padding: 1px 6px; border-radius: 4px; font-size: .86em; }
+.prose pre { background: var(--card-2); padding: 14px; border-radius: var(--r); overflow-x: auto; line-height: 1.5; }
+.prose blockquote { border-left: 2px solid var(--accent); margin: .4em 0; padding: 0 14px; color: var(--muted); font-style: italic; }
+/* Highlighter effect: a gradient that is only yellow between 45% and 88% of the line height. */
+.prose mark { background: linear-gradient(transparent 45%, var(--butter) 45% 88%, transparent 88%); color: inherit; padding: 0 2px; }
+.prose hr { border: none; border-top: 1px solid var(--line-strong); margin: 1em 0; }
+.prose strong { font-weight: 600; }
+/* The raw text editor (monospace font, dashed border). */
+.editor { min-height: 480px; font-family: var(--mono); font-size: 13.5px; background: transparent; border-style: dashed; }
+
+/* ============ focus ============ */
+/* FOCUS TIMER page: two columns (timer + side panel), one column on smaller screens. */
+.focus-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; align-items: start; }
+@media (max-width: 1050px) { .focus-layout { grid-template-columns: 1fr; } }
+/* The card holding the round timer, centred. */
+.timer-card { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 36px 30px 30px; }
+/* The circular timer. The SVG is rotated -90deg so progress starts at 12 o'clock instead of 3 o'clock. */
+.ring { position: relative; width: 300px; height: 300px; }
+.ring svg { transform: rotate(-90deg); overflow: visible; }
+/* track = dotted background circle; prog = coloured progress arc (stroke-dashoffset changes as time passes); */
+/* moon = small dot that travels round the ring. */
+.ring .track { stroke: var(--line-strong); stroke-dasharray: 1 6; }
+.ring .prog { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .9s linear; }
+.ring .moon { fill: var(--accent); }
+.ring #moon { transition: transform .9s linear; }
+.ring .moon-halo { fill: none; stroke: var(--accent); opacity: .35; }
+/* The text in the middle: absolute + inset: 0 covers the whole ring, grid + place-items centres it. */
+/* tabular-nums makes all digits the same width so the timer does not wobble. */
+.ring .label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ring .time { font-family: var(--serif); font-size: 76px; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.ring .phase { font: 10.5px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .16em; margin-top: 8px; }
+/* The buttons for picking a focus mode; .on = selected (filled dark). */
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 8px; }
+.mode-opt { padding: 12px 12px 10px; border-radius: var(--r); border: 1px solid var(--line-strong); background: transparent; cursor: pointer; text-align: left; font: inherit; color: var(--ink); transition: all .2s; }
+.mode-opt:hover { background: var(--card-2); }
+.mode-opt.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.mode-opt.on small { color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.mode-opt b { display: block; font-family: var(--serif); font-weight: 400; font-size: 21px; font-style: italic; line-height: 1.1; }
+.mode-opt small { color: var(--muted); font-size: 9.5px; }
+/* Big number for statistics, and a thin progress bar (the inner span's width is set from JavaScript). */
+.stat { font-family: var(--serif); font-size: 46px; line-height: 1; letter-spacing: -1px; }
+.progress { height: 6px; border-radius: 99px; background: var(--card-2); overflow: hidden; border: 1px solid var(--line); }
+.progress > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+/* ============ spotify ============ */
+/* SPOTIFY: the embedded player iframe, and the "now playing" box. */
+.spotify-embed { border: 0; border-radius: 12px; width: 100%; display: block; }
+.now-playing { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; }
+/* Album art shown as a round record that spins (reuses the spin animation, 8s per turn). */
+.now-playing img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--ink); border: 5px solid var(--card-2); animation: spin 8s linear infinite; }
+.now-playing .t { font-family: var(--serif); font-size: 19px; }
+/* Play/pause buttons and the grid of playlist buttons. */
+.player-controls { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+.playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+.pl-btn { font: inherit; text-align: left; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--line-strong); background: transparent; color: var(--ink); cursor: pointer; transition: all .2s; }
+.pl-btn:hover { background: var(--card-2); }
+.pl-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pl-btn.on small { color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.pl-btn b { display: block; font-family: var(--serif); font-weight: 400; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-btn small { color: var(--muted); font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+
+/* ============ modal & toast ============ */
+/* MODAL (popup window): a fixed, full-screen dark overlay. backdrop-filter: blur blurs the page behind it. */
+/* z-index: 50 places it above the page. It starts invisible (opacity 0) and .show fades it in. */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(30, 22, 15, .42); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 50; opacity: 0; transition: opacity .2s; padding: 20px; }
+.modal-backdrop.show { opacity: 1; }
+/* The popup box: min(540px, 100%) = 540px wide, but never wider than the screen. It starts slightly lower and tilted. */
+.modal { width: min(540px, 100%); max-height: 90vh; overflow-y: auto; background: var(--card); transform: translateY(12px) rotate(-.4deg); transition: transform .3s var(--ease); }
+.modal.wide { width: min(780px, 100%); }
+/* When shown, transform: none moves the box to its normal straight position (animated). */
+.modal-backdrop.show .modal { transform: none; }
+/* Modal title row (title + close button) and body (form fields stacked). */
+.modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line-strong); }
+.modal-head h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 32px; text-transform: none; letter-spacing: -.5px; color: var(--ink); }
+.modal-body { display: flex; flex-direction: column; gap: 14px; }
+/* TOASTS: small pop-up messages stacked in the bottom-right corner, fixed to the window, above modals (z-index 60). */
+.toasts { position: fixed; bottom: 22px; right: 22px; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
+/* A single toast: dark pill that starts invisible and 10px lower, then .show slides it into place. */
+.toast { display: flex; gap: 14px; align-items: center; padding: 11px 12px 11px 18px; border-radius: 99px; background: var(--ink); color: var(--paper); box-shadow: 0 14px 30px -16px rgba(0,0,0,.6); transform: translateY(10px); opacity: 0; transition: all .3s var(--ease); max-width: 420px; font-size: 13.5px; }
+.toast .btn.ghost { color: var(--paper); border-color: color-mix(in srgb, var(--paper) 40%, transparent); }
+.toast .btn.ghost:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.toast.show { transform: none; opacity: 1; }
+
+/* ============ mobile ============ */
+/* MOBILE (phones, 760px wide or less): everything in this block only applies on small screens. */
+@media (max-width: 760px) {
+  /* One column only: no sidebar column. */
+  body { grid-template-columns: 1fr; }
+  /* The sidebar becomes a bottom tab bar: fixed to the bottom, full width, items in a row. */
+  .sidebar { position: fixed; bottom: 0; top: auto; height: auto; width: 100%; flex-direction: row; padding: 6px 4px; z-index: 40; border-right: none; border-top: 1px solid var(--line-strong); background: var(--paper); }
+  /* Hide the logo and footer; spread the nav links evenly and stack each icon number above its word. */
+  .brand, .sidebar-foot { display: none; }
+  .nav { flex-direction: row; justify-content: space-around; width: 100%; }
+  .nav a { flex-direction: column; align-items: center; gap: 0; font-size: 11px; padding: 6px 4px; }
+  .nav a:hover { padding-left: 4px; }
+  .nav a.active::after { margin: 2px 0 0; }
+  /* Extra bottom padding so content is not hidden behind the bottom tab bar; smaller titles. */
+  .main { padding: 26px 18px 100px; }
+  .page-head h1 { font-size: 46px; }
+  /* Small calendar cells; event chips become thin coloured bars (font-size: 0 hides their text). */
+  .cal-cell { min-height: 58px; padding: 3px; }
+  .cal-cell .num { font-size: 14px; }
+  .cal-chip { font-size: 0; height: 4px; padding: 0; border-left-width: 0; background: var(--c); border-radius: 2px; }
+  .paper-sheet { padding: 22px 18px; }
+}
+
+/* ============ careers ============ */
+/* CAREERS: job card = details on the left, score + buttons on the right. */
+.job-card { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; padding: 18px 22px; }
+@media (max-width: 800px) { .job-card { grid-template-columns: 1fr; } }
+.job-title { font-family: var(--serif); font-size: 23px; line-height: 1.15; margin: 2px 0 3px; letter-spacing: -.2px; }
+.job-side { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+/* Circular "fit" score. conic-gradient fills a pie slice: --p percent in accent, the rest in line colour. */
+.fit {
+  width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; align-content: center; position: relative;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--line) 0);
+}
+/* ::before draws a card-coloured circle 4px inside, turning the pie into a ring. The text sits above it (position: relative). */
+.fit::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--card); }
+.fit span, .fit small { position: relative; line-height: 1; }
+.fit span { font-family: var(--serif); font-size: 21px; }
+.fit small { font: 8.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+/* ::marker is the little triangle of a <details> dropdown. */
+details summary::marker { color: var(--faint); }
+
+/* Application tracker: 5 columns (like a kanban board) that scroll sideways if the screen is too narrow. */
+.tracker { display: grid; grid-template-columns: repeat(5, minmax(190px, 1fr)); gap: 14px; overflow-x: auto; padding-bottom: 8px; align-items: start; }
+.track-col { min-width: 190px; }
+.track-card { padding: 14px; margin-bottom: 10px; }
+
+/* Résumé preview: always white paper with dark text (fixed colours, not theme variables) so it looks like a real print. */
+.resume-sheet {
+  background: #fffdf8; color: #1d1712; padding: 34px 38px; border: 1px solid var(--line); box-shadow: 0 18px 34px -24px rgba(43, 33, 24, .6);
+  font-size: 12.5px; line-height: 1.45; max-height: 760px; overflow-y: auto;
+}
+/* Résumé headings. ".card .prose-resume h2" is more specific, so it beats the general ".card h2" style. */
+.card .prose-resume h2, .prose-resume h2 { display: block; text-transform: none; color: #1d1712; font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 0 0 2px; letter-spacing: -.4px; }
+.prose-resume h2 + p { color: #5a4e44; margin: 0 0 10px; font-size: 11.5px; }
+.card .prose-resume h3, .prose-resume h3 { display: block; color: #1d1712; font: 600 10.5px var(--sans); letter-spacing: .14em; text-transform: uppercase; border-bottom: 1px solid #1d1712; padding-bottom: 3px; margin: 14px 0 6px; }
+.card .prose-resume h4, .prose-resume h4 { color: #1d1712; font-size: 12.5px; font-weight: 600; margin: 8px 0 2px; }
+.prose-resume ul { margin: 2px 0 4px; padding-left: 17px; }
+.prose-resume li { margin: 1px 0; }
+.prose-resume p { margin: 4px 0; }
+.prose-resume mark { background: none; }
+/* A yellow note box with an accent left border. */
+.doc-notes { margin-top: 16px; padding: 16px 18px; background: color-mix(in srgb, var(--butter) 28%, transparent); border-left: 2px solid var(--accent); font-size: 13.5px; line-height: 1.6; }
+.doc-notes ul { padding-left: 18px; }
+
+/* ============ model picker ============ */
+/* MODEL PICKER (choose the AI model): the button that opens it and its parts. */
+.mp { position: relative; display: inline-block; }
+.mp-btn {
+  font: 500 12.5px var(--sans); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--ink);
+  background: transparent; border: 1px solid var(--line-strong); border-radius: 99px; padding: 6px 12px 6px 10px; max-width: 280px;
+}
+.mp-btn:hover { border-color: var(--ink); background: var(--card-2); }
+.mp-cur { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-prov { font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.mp-caret { font-size: 9px; color: var(--muted); }
+/* Coloured dot per AI provider. [data-p="openai"] selects by attribute value. */
+.mp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+.mp-dot[data-p="anthropic"] { background: #c0582f; }
+.mp-dot[data-p="openai"] { background: #4f7d74; }
+.mp-dot[data-p="gemini"] { background: #3f5a78; }
+.mp-dot[data-p="kiro"] { background: #7d5ba6; }
+/* The dropdown menu: absolute, just below the button (top: 100% + 6px), aligned right, scrolls inside. */
+.mp-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; width: 330px; max-height: 440px; display: flex; flex-direction: column;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 24px 50px -24px rgba(0,0,0,.55); overflow: hidden;
+  animation: rise .18s var(--ease);
+}
+/* Search field, scrolling list, group headings and items inside the menu. */
+.mp-search { border: none; border-bottom: 1px solid var(--line); border-radius: 0; padding: 12px 14px; background: transparent !important; }
+.mp-list { overflow-y: auto; padding: 4px 6px 8px; flex: 1; }
+.mp-group { font: 9.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 10px 8px 4px; }
+/* Each model option: 2-column grid. "grid-row: 1 / span 2" makes the marker span two rows. */
+.mp-item {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 8px; width: 100%; text-align: left; font: 14px var(--sans);
+  color: var(--ink); background: none; border: none; border-radius: 8px; padding: 7px 10px; cursor: pointer;
+}
+.mp-item:hover { background: var(--card-2); }
+.mp-item.on { background: color-mix(in srgb, var(--butter) 34%, transparent); }
+.mp-item small { grid-column: 1; font: 10.5px var(--mono); color: var(--faint); }
+.mp-item i { grid-row: 1 / span 2; grid-column: 2; font-style: normal; font-size: 8px; color: var(--accent); }
+/* Empty-result text, error line and footer of the menu. */
+.mp-empty { padding: 16px; color: var(--muted); font-size: 13px; text-align: center; }
+.mp-err { font-size: 11.5px; color: var(--accent); padding: 8px 14px; border-top: 1px dashed var(--line); }
+.mp-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.mp-refresh { font: 11px var(--sans); background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 0; }
+/* Smaller picker version, and the model name shown under chat messages. */
+.mp.compact .mp-btn { padding: 4px 10px 4px 8px; font-size: 12px; }
+.msg-model { margin-top: 8px; font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+/* keep dropdowns in the page header above the cards below it */
+/* z-index only works on positioned elements, so position: relative is added to lift the header above cards. */
+.page-head { position: relative; z-index: 6; }
+/* :has() = "a card that CONTAINS an open model menu". That card is lifted so the menu is not hidden behind other cards. */
+.card:has(.mp-menu) { z-index: 7; }
+/* Arrow drawn with CSS: a small box with two borders, rotated 45deg to form a "v". */
+.mp-caret { width: 6px; height: 6px; border-right: 1.3px solid var(--muted); border-bottom: 1.3px solid var(--muted); transform: translateY(-2px) rotate(45deg); }
+.mp-item i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+/* ============ degree planner ============ */
+/* DEGREE PLANNER: cover card with a 220px progress ring. */
+.degree-cover { grid-template-columns: 1fr 220px; }
+@media (max-width: 1050px) { .degree-cover { grid-template-columns: 1fr; } .deg-ring { max-width: 200px; } }
+/* The progress ring SVG: layered circles for track, planned (dashed), in-progress and done, plus % text. */
+.deg-ring { width: 100%; height: auto; }
+.deg-ring circle { stroke-width: 12; stroke-linecap: round; }
+.deg-ring .r-track { stroke: var(--line); stroke-linecap: butt; }
+.deg-ring .r-plan { stroke: var(--line-strong); stroke-dasharray: 2 5; }
+.deg-ring .r-ip { stroke: color-mix(in srgb, var(--accent) 40%, transparent); }
+.deg-ring .r-done { stroke: var(--accent); }
+.deg-ring .r-pct { font: 38px var(--serif); fill: var(--ink); }
+.deg-ring .r-lbl { font: 9px var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--muted); }
+
+/* Each year shown as a paper folder with a tab. The tab is absolutely positioned on top of the card. */
+.folder { position: relative; padding-top: 22px; transform: rotate(var(--tilt, 0deg)); }
+.folder-tab {
+  position: absolute; top: 0; left: 18px; height: 26px; min-width: 96px; padding: 4px 16px 0; border-radius: 10px 10px 0 0;
+  background: var(--butter); color: #2b2118; font: 11px var(--mono); letter-spacing: .12em; border: 1px solid var(--line); border-bottom: none;
+}
+/* Open folder: tab colour = 22% accent mixed into butter. */
+.folder.open .folder-tab { background: color-mix(in srgb, var(--accent) 22%, var(--butter)); }
+/* Folder content and its header row (editable title + buttons). */
+.folder-body { border-top-left-radius: 2px; padding: 16px 18px 18px; }
+.folder-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.folder-title { font-family: var(--serif); font-size: 25px; letter-spacing: -.3px; border: none !important; background: none !important; padding: 0; width: auto; flex: 1; min-width: 180px; }
+/* The delete-year button is smaller and faint. */
+.folder-head .icon-btn[data-del-year] { font-size: 12px; color: var(--faint); }
+/* Chevron arrow (two borders rotated). .down rotates it to point down. */
+.chev { display: inline-block; width: 7px; height: 7px; border-right: 1.4px solid currentColor; border-bottom: 1.4px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
+.chev.down { transform: rotate(45deg); }
+/* Term heading with a line after it (same trick as .day-label). */
+.term-label { font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 4px; display: flex; gap: 10px; align-items: center; }
+.term-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+/* Course rows: 7 grid columns = dot | code | title | credits | grade | status | delete. */
+.course-list { display: flex; flex-direction: column; }
+.course-row { display: grid; grid-template-columns: 10px 118px 1fr 66px 66px 112px 26px; gap: 6px; align-items: center; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+/* Inputs inside a row look like plain text until hovered or focused. */
+.course-row input, .course-row select { border-color: transparent; background: transparent; padding: 6px 7px; font-size: 13.5px; }
+.course-row input:hover, .course-row select:hover { border-color: var(--line); }
+.course-row input:focus, .course-row select:focus { border-color: var(--ink); background: var(--polaroid); }
+/* Code in monospace, numbers right-aligned, muted status. */
+.course-row .c-code { font-family: var(--mono); font-size: 12.5px; letter-spacing: .02em; }
+.course-row .c-num { text-align: right; }
+.course-row .c-status { font-size: 12px; color: var(--muted); }
+/* Status dot: filled = completed, half filled = in progress (hard-stop gradient), dashed = planned. */
+.c-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.4px solid var(--accent); }
+.s-completed .c-dot { background: var(--accent); }
+.s-in-progress .c-dot { background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+.s-planned .c-dot { border-style: dashed; border-color: var(--muted); }
+.s-failed .c-dot, .s-dropped .c-dot { border-color: var(--faint); }
+/* Failed or dropped courses are crossed out. */
+.s-failed .c-code, .s-dropped .c-code, .s-dropped .c-title, .s-failed .c-title { text-decoration: line-through; color: var(--faint); }
+/* The row of inputs for adding a new course. */
+.add-course { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.add-course input, .add-course select { padding: 7px 9px; font-size: 13px; flex: 1; min-width: 90px; width: auto; }
+/* On phones a course row shows only 4 columns; title, status and grade are hidden. */
+@media (max-width: 760px) { .course-row { grid-template-columns: 10px 1fr 60px 26px; } .course-row .c-title, .course-row .c-status, .course-row [data-c=grade] { display: none; } }
+
+/* REQUIREMENTS list: each requirement with name, status badge and progress bar. */
+.req-setup summary { cursor: pointer; font-family: var(--serif); font-size: 19px; }
+.req-list { display: flex; flex-direction: column; margin-top: 14px; }
+.req { padding: 12px 2px; border-bottom: 1px dashed var(--line); position: relative; }
+.req:last-child { border-bottom: none; }
+.req-name { font-family: var(--serif); font-size: 17.5px; line-height: 1.25; }
+.req-state { font: 9.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line-strong); white-space: nowrap; color: var(--muted); }
+/* Badge style per status: met = filled, in-progress = accent, missing = dashed accent. */
+.req.s-met .req-state { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.req.s-in-progress .req-state { color: var(--accent); border-color: var(--accent); }
+.req.s-missing .req-state { color: var(--accent); border-style: dashed; border-color: var(--accent); }
+/* Stacked progress bar: done, in-progress and planned (striped) pieces side by side in a flex row. */
+.req-bar { display: flex; height: 6px; border-radius: 99px; background: var(--card-2); border: 1px solid var(--line); overflow: hidden; margin: 8px 0 6px; }
+.req-bar span { display: block; height: 100%; }
+.req-bar .b-done { background: var(--accent); }
+.req-bar .b-ip { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+.req-bar .b-pl { background: repeating-linear-gradient(90deg, var(--line-strong) 0 3px, transparent 3px 6px); }
+/* Small chip showing a course code, styled by its status. */
+.code-chip { font: 11px var(--mono); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line-strong); white-space: nowrap; }
+.code-chip.s-completed { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: transparent; }
+.code-chip.s-planned { border-style: dashed; }
+/* Edit buttons hidden until you hover the requirement (.req:hover shows them). */
+.req-actions { display: none; position: absolute; right: 0; bottom: 6px; }
+.req:hover .req-actions { display: flex; }
+.req-actions .icon-btn { font-size: 11.5px; }
+
+/* Dashed box for web search results. */
+.web-box { margin-top: 14px; padding: 10px 14px; border: 1px dashed var(--line-strong); border-radius: var(--r); }
+
+/* ============ combobox (university picker) ============ */
+/* COMBOBOX (searchable university picker): the suggestion list drops down under the input. */
+.combo { position: relative; }
+.combo-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: 260px; overflow-y: auto; padding: 4px;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: 0 18px 40px -22px rgba(0,0,0,.5);
+  animation: rise .15s var(--ease);
+}
+/* Each option; hovered or selected ones are tinted yellow. */
+.combo-opt { display: block; width: 100%; text-align: left; font: 14px var(--sans); text-transform: none; letter-spacing: 0; color: var(--ink); background: none; border: none; border-radius: 7px; padding: 8px 10px; cursor: pointer; }
+.combo-opt:hover, .combo-opt.on { background: color-mix(in srgb, var(--butter) 34%, transparent); }
+/* :has + :not([hidden]) = a card containing a VISIBLE list; it is raised so the list overlaps the cards below. */
+.card:has(.combo-list:not([hidden])) { z-index: 8; }
+
+/* ============ follow-up questions (streams etc.) ============ */
+/* FOLLOW-UP QUESTIONS: a tinted box with a question and answer buttons; .answered makes it plain/dashed. */
+.ask-card { margin-top: 14px; padding: 14px 16px; border-radius: var(--r); background: color-mix(in srgb, var(--butter) 30%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.ask-card.answered { background: transparent; border-style: dashed; border-color: var(--line-strong); }
+.ask-q { font-family: var(--serif); font-size: 19px; line-height: 1.25; margin-bottom: 10px; }
+/* Space between consecutive questions; options wrap in a row. */
+.ask-item + .ask-item { margin-top: 12px; }
+.ask-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Answer button with bold title and small description; .on = chosen; .sm = small pill. */
+.ask-opt { font: 13px var(--sans); text-align: left; background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 10px; padding: 9px 12px; cursor: pointer; max-width: 100%; }
+.ask-opt b { display: block; font-weight: 600; }
+.ask-opt small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.ask-opt:hover { border-color: var(--ink); }
+.ask-opt.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ask-opt.on small { color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.ask-opt.sm { padding: 6px 12px; border-radius: 99px; }
+
+/* ============ note folders ============ */
+/* NOTE FOLDERS: folder header button (icon, name, count) with its notes indented underneath. */
+.nfolder { border-bottom: 1px solid var(--line); padding: 2px 0; }
+.nfolder-head { display: flex; align-items: center; gap: 9px; width: 100%; background: none; border: none; color: var(--ink); cursor: pointer; padding: 10px 6px; font: 15px var(--serif); text-align: left; }
+.nfolder-head:hover { background: var(--card-2); border-radius: 8px; }
+.nf-name { flex: 1; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nf-count { font: 10.5px var(--mono); color: var(--muted); }
+.nfolder .note-item { margin-left: 14px; }
+/* Exam info and links inside a folder; .link-btn is a button that looks like an underlined link. */
+.nf-exam { margin: 0 6px 6px 22px; font-size: 12px; color: var(--accent); display: flex; flex-direction: column; gap: 2px; }
+.link-btn { background: none; border: none; padding: 0; color: var(--muted); font: 12px var(--sans); text-decoration: underline; cursor: pointer; text-align: left; }
+.link-btn:hover { color: var(--accent); }
+/* New-note button, exam-prep notes (tinted), the "prep" tag and the "move to folder" dropdown. */
+.nf-new { margin: 4px 0 10px 22px; }
+.note-item.prep { background: color-mix(in srgb, var(--butter) 22%, transparent); }
+.prep-tag { font: 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; border: 1px solid currentColor; border-radius: 99px; padding: 1px 7px; }
+.move-sel { width: auto; padding: 3px 8px; font-size: 12px; border-radius: 99px; }
+
+/* ============ themed dropdowns (replace native <select>) ============ */
+/* THEMED DROPDOWNS: js/cselect.js hides each real <select> (cs-native) and shows a styled button (.cselect) instead. */
+select.cs-native { display: none !important; }
+/* The dropdown button, styled like the other inputs, with the value on the left and an arrow on the right. */
+.cselect {
+  font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r);
+  padding: 10px 12px; width: 100%; display: inline-flex; align-items: center; justify-content: space-between; gap: 10px;
+  text-align: left; cursor: pointer; transition: border .2s, background .2s; min-width: 0;
+}
+/* States: hover, keyboard focus (:focus-visible) or open, and disabled. */
+.cselect:hover { border-color: var(--ink); }
+.cselect:focus-visible, .cselect.open { outline: none; border-color: var(--ink); background: var(--polaroid); }
+.cselect:disabled { opacity: .5; cursor: not-allowed; }
+/* The chosen value (cut with ...) and the caret arrow, which flips upward when the dropdown is open. */
+.cs-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-caret { flex: none; width: 6px; height: 6px; border-right: 1.3px solid var(--muted); border-bottom: 1.3px solid var(--muted); transform: translateY(-2px) rotate(45deg); transition: transform .2s; }
+.cselect.open .cs-caret { transform: translateY(1px) rotate(-135deg); }
+/* Inside a field label, use normal text style instead of the small caps label style. */
+label.field .cselect { font-family: var(--sans); text-transform: none; letter-spacing: 0; font-size: 14.5px; }
+/* The options menu: position: fixed (placed by JavaScript) and z-index: 200 so it floats above everything, even modals. */
+.cs-menu {
+  position: fixed; z-index: 200; overflow-y: auto; padding: 4px; max-width: min(420px, calc(100vw - 16px));
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: 0 18px 40px -20px rgba(0,0,0,.5);
+  animation: rise .14s var(--ease);
+}
+/* Each option; .active = keyboard highlight, .on = currently selected, :disabled = cannot be chosen. */
+.cs-opt { display: block; width: 100%; text-align: left; font: 14px var(--sans); color: var(--ink); background: none; border: none; border-radius: 7px; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+.cs-opt:hover, .cs-opt.active { background: var(--card-2); }
+.cs-opt.on { background: color-mix(in srgb, var(--butter) 36%, transparent); }
+.cs-opt:disabled { color: var(--faint); cursor: default; }
+/* compact contexts */
+/* Smaller dropdown styles for specific places (course rows, add-course, move menu, tracker cards). */
+.course-row .cselect { border-color: transparent; padding: 6px 7px; font-size: 12px; color: var(--muted); }
+.course-row .cselect:hover { border-color: var(--line); }
+.add-course .cselect { padding: 7px 9px; font-size: 13px; flex: 1; min-width: 90px; width: auto; }
+.move-sel.cselect { width: auto; padding: 3px 10px; font-size: 12px; border-radius: 99px; gap: 8px; }
+.track-card .cselect { border-radius: 99px; }
+
+/* ============ movable home layout ============ */
+/* MOVABLE HOME LAYOUT: the home page widgets can be rearranged by drag and drop. */
+/* Two columns of zones (.hz), each a 2-column grid of widgets (.hw). */
+.grid.dash.home-cols { grid-template-columns: 1fr 1.1fr; margin-top: 22px; align-items: start; }
+@media (max-width: 1050px) { .grid.dash.home-cols { grid-template-columns: 1fr; } }
+.hz { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-content: start; min-height: 20px; }
+/* Hide the top zone when it has no widgets. */
+.hz-top:empty { display: none; }
+/* A widget spans the full row ("1 / -1" = from the first to the last grid line); .half spans one column. */
+.hw { grid-column: 1 / -1; min-width: 0; position: relative; }
+.hw.half { grid-column: span 1; }
+@media (max-width: 760px) { .hw.half { grid-column: 1 / -1; } }
+.hw > .card { height: 100%; }
+/* Edit mode: dashed outline around zones, grab cursor, and cards ignore clicks (pointer-events: none) so they can be dragged. */
+.hz.editing { outline: 1.5px dashed var(--line-strong); outline-offset: 8px; border-radius: 6px; padding-bottom: 4px; }
+.hz.editing .hw { cursor: grab; }
+.hz.editing .hw > .card { pointer-events: none; opacity: .85; }
+/* The widget being dragged is faded; ::before draws an accent line showing where it will be dropped. */
+.hw.dragging { opacity: .35; }
+.hw.drop-before::before { content: ''; position: absolute; left: 0; right: 0; top: -13px; height: 3px; border-radius: 3px; background: var(--accent); }
+.hz.drop-end .hz-drop { border-color: var(--accent); color: var(--accent); }
+/* Drop target at the end of a zone. */
+.hz-drop { grid-column: 1 / -1; border: 1.5px dashed var(--line-strong); border-radius: var(--r); padding: 12px; text-align: center; font: 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+/* Toolbar above a widget in edit mode. The grip is a dotted pattern made from a tiny repeating radial-gradient. */
+.hw-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; font-size: 12px; }
+.hw-bar b { font: 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.hw-grip { width: 14px; height: 10px; background: radial-gradient(circle, var(--muted) 1.2px, transparent 1.4px) 0 0 / 5px 5px; }
+/* Widget move buttons pushed to the right (margin-left: auto). */
+.hw-btns { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+.hw-btns button { font: 11.5px var(--sans); background: var(--card); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 99px; padding: 2px 9px; cursor: pointer; }
+.hw-btns button:hover:not(:disabled) { border-color: var(--ink); }
+.hw-btns button:disabled { opacity: .35; cursor: default; }
+/* Banner shown at the top while editing the layout; smaller event text in half-width widgets. */
+.edit-banner { margin-bottom: 18px; padding: 10px 14px; border-radius: var(--r); background: color-mix(in srgb, var(--butter) 30%, transparent); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.hw.half .ev .t { font-size: 16px !important; line-height: 1.25; }
+.hw.half .ev .when { font-size: 10.5px; }
+
+/* Later rules win when specificity is equal: this raises the model menu above the themed dropdown menus (200). */
+.mp-menu { z-index: 210; }

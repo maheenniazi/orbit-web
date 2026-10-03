@@ -1,0 +1,12 @@
+{
+  "name": "study-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An aesthetic, automatic study companion: calendar, AI chat, notes, syllabus import, focus modes, Spotify.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,5 @@
+.env
+node_modules/
+.DS_Store
+# per-model copies of the Kiro agent, generated when you pick a model
+kiro-agent/.kiro/agents/study-os-m-*.json

@@ -1,0 +1,55 @@
+# Deploys orbit (the hosted website version) to GitHub Pages on every push to master.
+#
+# How it works: orbit's website is just the static files in public/ (no build step, no server).
+# This workflow uploads that folder as a "Pages artifact" and publishes it, so your site goes live
+# at https://<your-username>.github.io/<repo>/ a minute or two after each push.
+#
+# ONE-TIME SETUP in your repo on GitHub:
+#   Settings → Pages → "Build and deployment" → Source: GitHub Actions.
+# That's it — after that, every push to master updates the live site automatically.
+name: Deploy orbit to GitHub Pages
+
+on:
+  # Run whenever you push to the main branch.
+  push:
+    branches: [main]
+  # Also allow running it by hand from the Actions tab.
+  workflow_dispatch:
+
+# Permissions the deploy needs (read the repo, write to Pages, use an id token for deployment).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deployment at a time; if you push again mid-deploy, let the newer one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      # The live URL is reported back on the Actions run once it finishes.
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Get the repository files.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Prepare GitHub Pages.
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      # Upload ONLY the public/ folder (the static website) as the artifact to publish.
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
+
+      # Publish it to GitHub Pages.
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

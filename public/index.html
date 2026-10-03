@@ -1,0 +1,137 @@
+<!doctype html>
+<!-- The doctype line above tells the browser this is a modern HTML5 page. -->
+<!-- This is the ONLY HTML page of the app. It is a "single-page app": the page never reloads; -->
+<!-- JavaScript (js/app.js) swaps the content of the main area when you click a link. -->
+<!-- lang="en" = English. data-theme="light" is read by styles.css; app.js changes it to "dark" for the night theme. -->
+<html lang="en" data-theme="light">
+<!-- HEAD: information about the page (title, icon, fonts, styles). Nothing here is shown inside the page itself. -->
+<head>
+  <!-- utf-8 lets the page show any character (accents, emoji, symbols). -->
+  <meta charset="utf-8" />
+  <!-- Makes phones use the real screen width instead of zooming out to a desktop-sized page. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Text shown on the browser tab. -->
+  <title>Orbit</title>
+  <!-- Favicon (tab icon): a tiny SVG drawn inline as a "data URL" (a red planet with a ring), so no image file is needed. -->
+  <!-- %23 is the URL-encoded form of the # character used in the colours. -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='13' fill='%23b3261e'/><ellipse cx='32' cy='32' rx='28' ry='9' fill='none' stroke='%232b2118' stroke-width='3' transform='rotate(-20 32 32)'/></svg>" />
+  <!-- preconnect opens the connection to Google Fonts early, so the fonts download faster. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Loads the four fonts used in styles.css: DM Serif Display (headlines), DM Sans (body text), -->
+  <!-- DM Mono (small labels) and Caveat (handwriting). display=swap shows a fallback font until they load. -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet" />
+  <!-- Our own stylesheet with all the colours, layout and theme rules. -->
+  <!-- Relative path (no leading "/") so it works both at a domain root AND under a subpath like -->
+  <!-- github.io/orbit/ when hosted on GitHub Pages. -->
+  <link rel="stylesheet" href="styles.css" />
+  <!-- PWA ("Progressive Web App") bits: let people INSTALL orbit like a real app and use it offline. -->
+  <!-- The manifest describes the app (name, icons, colours) to the browser/OS. -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- The browser UI colour (address bar on mobile) in each theme. -->
+  <meta name="theme-color" content="#f4ece2" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#17120d" media="(prefers-color-scheme: dark)" />
+  <!-- iOS: allow installing to the home screen and use the app icon below. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="orbit" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+</head>
+<!-- BODY: everything that appears on screen. -->
+<!-- styles.css makes the body a two-column grid: sidebar on the left, main view on the right. -->
+<body>
+  <!-- decorative night-sky / orbit line art -->
+  <!-- The SVG below is pure decoration. class="sky" (styles.css) pins it behind the page with position: fixed and z-index: -1. -->
+  <!-- aria-hidden="true" tells screen readers to skip it. viewBox sets a 1440 x 900 drawing area; -->
+  <!-- preserveAspectRatio="xMidYMid slice" scales it to cover the whole window (like a background photo), cropping the edges. -->
+  <svg class="sky" aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <!-- Group 1: orbit rings. Ellipses with no fill, a 1px outline, rotated a little. -->
+    <!-- currentColor = use the CSS color of .sky (var(sky) from styles.css), so the lines change with the theme. -->
+    <!-- stroke-dasharray="2 7" makes the middle ring dotted (2 units drawn, 7 units gap). -->
+    <g fill="none" stroke="currentColor" stroke-width="1">
+      <ellipse cx="1180" cy="120" rx="520" ry="150" transform="rotate(-14 1180 120)" />
+      <ellipse cx="1180" cy="120" rx="360" ry="96" transform="rotate(-14 1180 120)" stroke-dasharray="2 7" />
+      <ellipse cx="260" cy="860" rx="600" ry="170" transform="rotate(12 260 860)" />
+    </g>
+    <!-- Group 2: stars and planets. Filled circles: cx/cy = position of the centre, r = radius (size). -->
+    <g fill="currentColor">
+      <circle cx="1390" cy="-4" r="4" /><circle cx="770" cy="236" r="6" />
+      <circle cx="836" cy="742" r="3" /><circle cx="1320" cy="600" r="1.6" /><circle cx="560" cy="120" r="1.4" />
+      <circle cx="980" cy="420" r="1.2" /><circle cx="1240" cy="820" r="1.8" /><circle cx="420" cy="520" r="1.2" />
+    </g>
+    <!-- Group 3: four-pointed sparkles. Each path "d" is a list of drawing moves (M = move to, l = line by, z = close shape). -->
+    <!-- styles.css gives .sparkles the "twinkle" animation so they slowly fade and shrink. -->
+    <g class="sparkles" fill="currentColor">
+      <path d="M1060 330 l3 11 11 3 -11 3 -3 11 -3 -11 -11 -3 11 -3z" />
+      <path d="M640 800 l2 8 8 2 -8 2 -2 8 -2 -8 -8 -2 8 -2z" />
+      <path d="M1370 460 l2 7 7 2 -7 2 -2 7 -2 -7 -7 -2 7 -2z" />
+    </g>
+  </svg>
+
+  <!-- SIDEBAR: the left column (on phones styles.css turns it into a bottom tab bar). <aside> means "side content". -->
+  <aside class="sidebar">
+    <!-- Logo + app name; clicking it goes to the home page (#/dashboard). -->
+    <a class="brand" href="#/dashboard">
+      <!-- Logo drawing: a planet circle (coloured by .planet in CSS) and a tilted ring around it. -->
+      <!-- The "planet-cover" arc is hidden by styles.css (display: none). -->
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="12" class="planet" />
+        <ellipse cx="32" cy="32" rx="27" ry="8.5" fill="none" stroke="currentColor" stroke-width="2.2" transform="rotate(-20 32 32)" />
+        <path d="M20.4 27.3 A12 12 0 0 1 43.6 36.7" fill="none" class="planet-cover" />
+      </svg>
+      <!-- The name text; app.js replaces it with APP_NAME using the id "brand-name". -->
+      <span class="brand-name" id="brand-name">orbit</span>
+    </a>
+
+    <!-- NAVIGATION. Each link points to a "hash" URL like #/calendar. Clicking it only changes the part after #, -->
+    <!-- so the browser does NOT load a new page. Instead it fires a "hashchange" event. The router in js/app.js -->
+    <!-- listens for that event, reads location.hash (e.g. "calendar"), and draws that page inside <main id="view">. -->
+    <!-- data-route="calendar" lets app.js find the link for the current page and give it the "active" class -->
+    <!-- (highlighted with the red dot in CSS). Note "#/import" is the syllabus page and "#/chat" is the ask page. -->
+    <!-- <span class="ico"> holds the small "01", "02" numbers shown before each name. -->
+    <nav class="nav">
+      <a href="#/dashboard" data-route="dashboard"><span class="ico">01</span>home</a>
+      <a href="#/calendar" data-route="calendar"><span class="ico">02</span>calendar</a>
+      <a href="#/import" data-route="import"><span class="ico">03</span>syllabus</a>
+      <a href="#/notes" data-route="notes"><span class="ico">04</span>notes</a>
+      <a href="#/chat" data-route="chat"><span class="ico">05</span>ask</a>
+      <a href="#/focus" data-route="focus"><span class="ico">06</span>focus</a>
+      <a href="#/degree" data-route="degree"><span class="ico">07</span>degree</a>
+      <a href="#/careers" data-route="careers"><span class="ico">08</span>careers</a>
+      <a href="#/settings" data-route="settings"><span class="ico">09</span>settings</a>
+    </nav>
+
+    <!-- Bottom of the sidebar. These three start EMPTY; JavaScript fills them in using their id. -->
+    <div class="sidebar-foot">
+      <!-- focus-pill: app.js writes the current focus phase into it; clicking opens the focus page. -->
+      <a class="focus-pill" id="focus-pill" href="#/focus"></a>
+      <!-- mini-timer: small running timer. "hidden" hides it until app.js shows it while a timer is running. -->
+      <div class="mini-timer" id="mini-timer" hidden></div>
+      <!-- player-dock: spotify.js puts the music player here (CSS hides it while empty). -->
+      <div class="player-dock" id="player-dock"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW: the right column. It is empty here; the router in app.js puts the current page's HTML inside -->
+  <!-- this element (found by id="view") every time the URL hash changes. -->
+  <main class="main" id="view"></main>
+
+  <!-- TOASTS: container for small pop-up messages (e.g. "saved"). The toast() function in js/ui.js adds them here; -->
+  <!-- CSS fixes this box to the bottom-right corner of the window. -->
+  <div id="toasts" class="toasts"></div>
+  <!-- Starts the app. type="module" lets app.js use "import" to load the other files in js/ (calendar.js, notes.js, ...). -->
+  <!-- Relative path so module imports resolve under any base path (domain root or /orbit/ subpath). -->
+  <!-- Module scripts wait until the HTML above is ready, so app.js can safely find #view, #toasts, etc. -->
+  <script type="module" src="js/app.js"></script>
+  <!-- Register the service worker (sw.js), which caches the app so it loads instantly and works offline. -->
+  <!-- It's optional: if the browser doesn't support it or it fails, orbit still works normally. -->
+  <!-- The scope/URL are relative, so this works at a domain root or under /orbit/ on GitHub Pages. -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      // Wait until the page has loaded so registering the worker doesn't compete with first paint.
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is a bonus; ignore failures */ });
+      });
+    }
+  </script>
+</body>
+</html>
